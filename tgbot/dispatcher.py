@@ -10,7 +10,7 @@ from telegram import Bot, Update, BotCommand
 from telegram.ext import (
     Updater, Dispatcher, Filters,
     CommandHandler, MessageHandler,
-    CallbackQueryHandler,
+    CallbackQueryHandler, ConversationHandler
 )
 
 from dtb.celery import app  # event processing in async mode
@@ -31,8 +31,12 @@ def setup_dispatcher(dp):
     Adding handlers for events from Telegram
     """
     # onboarding
-    dp.add_handler(CommandHandler("start", onboarding_handlers.command_start))
 
+    dp.add_handler(onboarding_handlers.conv_handler)
+    dp.add_handler(CommandHandler("start", onboarding_handlers.command_start))
+    dp.add_handler(CommandHandler("me", onboarding_handlers.Me))
+    dp.add_handler(CommandHandler("top", onboarding_handlers.Top))
+    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, onboarding_handlers.get_user))
     # admin commands
     dp.add_handler(CommandHandler("admin", admin_handlers.admin))
     dp.add_handler(CommandHandler("stats", admin_handlers.stats))
@@ -47,7 +51,8 @@ def setup_dispatcher(dp):
 
     # broadcast message
     dp.add_handler(
-        MessageHandler(Filters.regex(rf'^{broadcast_command}(/s)?.*'), broadcast_handlers.broadcast_command_with_message)
+        MessageHandler(Filters.regex(rf'^{broadcast_command}(/s)?.*'),
+                       broadcast_handlers.broadcast_command_with_message)
     )
     dp.add_handler(
         CallbackQueryHandler(broadcast_handlers.broadcast_decision_handler, pattern=f"^{CONFIRM_DECLINE_BROADCAST}")

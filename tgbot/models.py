@@ -23,6 +23,7 @@ class User(CreateUpdateTracker):
     first_name = models.CharField(max_length=256)
     last_name = models.CharField(max_length=256, **nb)
     language_code = models.CharField(max_length=8, help_text="Telegram client's lang", **nb)
+    leetcode_username = models.CharField(max_length=25, null=True, blank=True, default=None)
     deep_link = models.CharField(max_length=64, **nb)
 
     is_blocked_bot = models.BooleanField(default=False)
