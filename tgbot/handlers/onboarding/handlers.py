@@ -10,6 +10,8 @@ from tgbot.handlers.onboarding import static_text
 from tgbot.handlers.utils.info import extract_user_data_from_update
 from tgbot.models import User
 
+LEETCODE, FINAL = range(2)
+
 
 def command_start(update: Update, context: CallbackContext) -> None:
     u, created = User.get_user_and_created(update, context)
@@ -19,7 +21,8 @@ def command_start(update: Update, context: CallbackContext) -> None:
     else:
         text = static_text.start_not_created.format(first_name=u.first_name)
 
-    update.message.reply_text(text=f"{text} \n Leetcode profilizni tashang(username)")
+    update.message.reply_text(
+        text=f"{text} \n Leetcode profilizni tashang(username)")
     return LEETCODE
 
 
@@ -31,9 +34,11 @@ def get_user(update: Update, context: CallbackContext) -> None:
         get_profile(leetcode_username)
         user.leetcode_username = leetcode_username
         user.save()
-        update.message.reply_text(f"your leetcode username {update.message.text}")
+        update.message.reply_text(
+            f"your leetcode username {update.message.text}")
     except:
         update.message.reply_text("Bunday account yoq")
+    return FINAL
 
 
 def Me(update: Update, context: CallbackContext) -> None:
@@ -41,28 +46,29 @@ def Me(update: Update, context: CallbackContext) -> None:
     user = User.objects.filter(user_id=user_id)[0]
     func_data = get_profile(user.leetcode_username)
     text = ""
-    text += f"------field---|-------value-------------" \
-            f"\n--------------------------------------" \
-            f"\n| Username  | {func_data['username']}|" \
-            f"\n| Ranking   | {func_data['ranking']} |" \
-            f"\n| Points    | {func_data['points']}  |" \
-            f"\n| Total     | {func_data['total']}   |" \
-            f"\n| Easy      | {func_data['easy']}    |" \
-            f"\n| Medium    | {func_data['medium']}  |" \
-            f"\n| Hard      | {func_data['hard']}    |" \
+    text += f"|   field   |         value           |" \
+        f"\n|-------------------------------------|" \
+            f"\n| Username  | {func_data['username']} |" \
+            f"\n| Ranking   | {func_data['ranking']}  |" \
+            f"\n| Points    | {func_data['points']}   |" \
+            f"\n| Total     | {func_data['total']}    |" \
+            f"\n| Easy      | {func_data['easy']}     |" \
+            f"\n| Medium    | {func_data['medium']}   |" \
+            f"\n| Hard      | {func_data['hard']}     |" \
  \
-            "\n"
+        "\n"
 
     update.message.reply_text(text)
 
 
 def Top(update: Update, context: CallbackContext) -> None:
     users = User.objects.all()
-    text = "------username---|-----score-------|rank"
-    for user in users:
-        func_data = get_profile(user.leetcode_username)
+    text = "| № |    username    |    solved    |    rank    |    rating    |" \
+        "\n|-------------------------------------------------------------------------|"
 
-        text += f"\n {func_data['username']}---|---- {func_data['easy'] * 1 + func_data['medium'] * 2 + func_data['hard'] * 3}---|--- {func_data['ranking']}" \
+    for i, user in enumerate(users, start=1):
+        func_data = get_profile(user.leetcode_username)
+        text += f"\n|  {i} |    {func_data['username']}     |     {func_data['total']}     |      {func_data['ranking']}      |      {func_data['easy'] * 1 + func_data['medium'] * 2 + func_data['hard'] * 3}      |"
 
     update.message.reply_text(text)
 
@@ -73,7 +79,8 @@ def secret_level(update: Update, context: CallbackContext) -> None:
     user_id = extract_user_data_from_update(update)['user_id']
     text = static_text.unlock_secret_room.format(
         user_count=User.objects.count(),
-        active_24=User.objects.filter(updated_at__gte=timezone.now() - datetime.timedelta(hours=24)).count()
+        active_24=User.objects.filter(
+            updated_at__gte=timezone.now() - datetime.timedelta(hours=24)).count()
     )
 
     context.bot.edit_message_text(
@@ -123,11 +130,19 @@ def get_profile(username):
     return profile
 
 
-LEETCODE = range(1)
+def final(update: Update, context: CallbackContext) -> None:
+    
+    update.message.reply_text("Siz registratiyadan o`tgansiz")
+
+
 conv_handler = ConversationHandler(
     entry_points=[CommandHandler("start", command_start)],
     states={
         LEETCODE: [MessageHandler(Filters.text, get_user)],
+        FINAL: [MessageHandler(Filters.text, final),
+                CommandHandler("me", Me),
+                CommandHandler("top", Top)],
+
 
     },
     fallbacks=[]
